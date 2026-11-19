@@ -30,6 +30,8 @@ class Chatbot:
         self.input_tokens = 0
         self.output_tokens = 0
 
+        self.iteration = 0
+
     def trim_messages(self,max_number=4):
         if len(self.messages) < max_number:
             return
@@ -41,6 +43,37 @@ class Chatbot:
 
         trimmed_messages = system_messages + other_messages
         self.messages = trimmed_messages
+
+    def summarise_messages(self):
+
+        if self.iteration % 5 != 0:
+            return
+
+        system_messages = [msg for msg in self.messages if msg['role'] == 'system']
+        other_messages = [msg for msg in self.messages if msg['role'] != 'system']
+
+        summarisation_prompt = "Summarize these messages concisely, kepping key facts and information"
+
+        early_messages, later_messages = (other_messages[:5], other_messages[5:])
+
+        response = self.llm.chat.completions.create(
+            model="openai/gpt-oss-20b",
+            messages=[{
+                "role": "system",
+                "content": f"{summarisation_prompt} Here are the messages to summarize: {early_messages}"
+            }
+          
+            ]
+        )
+
+        summarised_message = {
+            "role": "system",
+            "content":  f'this is a summary of 5 early messages: {response.choices[0].message.content}'
+        }
+
+        self.messages = system_messages + [summarised_message] + later_messages
+
+        print("Summarised early messages to reduce token usage.")
     
     def bot(self,message):
  
@@ -66,7 +99,8 @@ class Chatbot:
         
         self.messages.append({"role": "assistant", "content": response})
 
-        self.trim_messages()
+        #self.trim_messages()
+        self.summarise_messages()
 
         return response
         # response_content = llm_response.choices[0].message.content
@@ -89,6 +123,8 @@ class Chatbot:
         
         while True:
             user_input = input("You: ").strip()
+
+            self.iteration += 1
             
             if user_input.lower() == 'exit':
                 print("Exiting the chatbot. Goodbye!")
@@ -100,8 +136,8 @@ class Chatbot:
                 print("Input exceeds the maximum token limit of 10. Please enter a shorter message.")
                 continue
 
-            if self.total_tokens > 2000:
-                print("Total token usage exceeds the limit of 100. Please start a new session.")
+            if self.total_tokens > 6000:
+                print("Total token usage exceeds the limit of 6000. Please start a new session.")
                 break
             
             print(f"User input tokens: {token_count}")
