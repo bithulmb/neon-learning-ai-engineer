@@ -11,9 +11,23 @@ llm=OpenAI(
     base_url="https://api.groq.com/openai/v1",
     )
 
-messages = []
+messages = [
+    {
+        "role": "system",
+        "content": """
+            You are a helpful assistant.
+            Your name is Neon_bot.
+            Always introduce yourself in the first message. 
+            Give short and helpful answers.
+            """
+    }
+]
+
+
+total_tokens = 0
 
 def bot(message):
+    global total_tokens
     messages.append({"role": "user", "content": message})
     llm_response = llm.chat.completions.create(
         model="openai/gpt-oss-20b",
@@ -22,6 +36,7 @@ def bot(message):
 
     response_content = llm_response.choices[0].message.content
     messages.append({"role": "assistant", "content": response_content})
+    total_tokens += llm_response.usage.total_tokens
     return response_content
 
 def chat():
@@ -35,6 +50,7 @@ def chat():
         print(f"Bot: {bot_answer}")
 def main():
     chat()
+    print(f"Total tokens used in this session: {total_tokens}")
 
 if __name__ == "__main__":
     main()
