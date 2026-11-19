@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 import tiktoken
+import time
 
 from transformers import AutoTokenizer
 
@@ -34,24 +35,39 @@ class Chatbot:
         self.messages.append({"role": "user", "content": message})
         llm_response = self.llm.chat.completions.create(
             model="openai/gpt-oss-20b",
-            messages=self.messages
+            messages=self.messages,
+            stream=True
         )
 
-        response_content = llm_response.choices[0].message.content
+        response = ""
+        for chunk in llm_response:
+            if chunk.choices[0].delta.content:
+                
+                print(chunk.choices[0].delta.content, end="", flush=True)                
+                response += chunk.choices[0].delta.content
+                time.sleep(0.05)
+
+            if chunk.usage:
+                self.total_tokens += chunk.usage.total_tokens
+                self.input_tokens += chunk.usage.prompt_tokens
+                self.output_tokens += chunk.usage.completion_tokens
+
+        return response
+        # response_content = llm_response.choices[0].message.content
         
-        self.messages.append({"role": "assistant", "content": response_content})
+        # self.messages.append({"role": "assistant", "content": response_content})
         
-        self.total_tokens += llm_response.usage.total_tokens
-        self.input_tokens += llm_response.usage.prompt_tokens
-        self.output_tokens += llm_response.usage.completion_tokens
+        # self.total_tokens += llm_response.usage.total_tokens
+        # self.input_tokens += llm_response.usage.prompt_tokens
+        # self.output_tokens += llm_response.usage.completion_tokens
         
-        return response_content
+        # return response_content
 
     def chat(self):
 
         #tokenizer from tiktoken
-        # encoding = tiktoken.get_encoding("cl100k_base")
-        encoding = AutoTokenizer.from_pretrained("openai/gpt-oss-20b")
+        encoding = tiktoken.get_encoding("cl100k_base")
+        # encoding = AutoTokenizer.from_pretrained("openai/gpt-oss-20b")
         
         print("Welcome to the chatbot! Type 'exit' to quit.")
         
@@ -68,14 +84,14 @@ class Chatbot:
                 print("Input exceeds the maximum token limit of 10. Please enter a shorter message.")
                 continue
 
-            if self.total_tokens > 100:
+            if self.total_tokens > 2000:
                 print("Total token usage exceeds the limit of 100. Please start a new session.")
                 break
             
             print(f"User input tokens: {token_count}")
             
-            bot_answer = self.bot(user_input)
-            print(f"Bot: {bot_answer}")
+            self.bot(user_input)
+            print()
 
     def report(self):
         for message in self.messages:
