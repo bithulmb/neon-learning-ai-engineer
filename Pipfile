@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 openai = "*"
 dotenv = "*"
+tiktoken = "*"
+transformers = "*"
 
 [dev-packages]
 
