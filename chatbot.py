@@ -30,6 +30,18 @@ class Chatbot:
         self.input_tokens = 0
         self.output_tokens = 0
 
+    def trim_messages(self,max_number=4):
+        if len(self.messages) < max_number:
+            return
+
+        system_messages = [msg for msg in self.messages if msg['role'] == 'system']
+        other_messages = [msg for msg in self.messages if msg['role'] != 'system']
+
+        other_messages = other_messages[-max_number:]
+
+        trimmed_messages = system_messages + other_messages
+        self.messages = trimmed_messages
+    
     def bot(self,message):
  
         self.messages.append({"role": "user", "content": message})
@@ -51,6 +63,10 @@ class Chatbot:
                 self.total_tokens += chunk.usage.total_tokens
                 self.input_tokens += chunk.usage.prompt_tokens
                 self.output_tokens += chunk.usage.completion_tokens
+        
+        self.messages.append({"role": "assistant", "content": response})
+
+        self.trim_messages()
 
         return response
         # response_content = llm_response.choices[0].message.content
