@@ -10,6 +10,11 @@ tiktoken = "*"
 transformers = "*"
 torch = "*"
 sentence-transformers = "*"
+langchain = "*"
+pypdf = "*"
+langchain-text-splitters = "*"
+langchain-huggingface = "*"
+langchain-chroma = "*"
 
 [dev-packages]
 
