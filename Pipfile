@@ -15,6 +15,8 @@ pypdf = "*"
 langchain-text-splitters = "*"
 langchain-huggingface = "*"
 langchain-chroma = "*"
+langchain-groq = "*"
+langchain-tavily = "*"
 
 [dev-packages]
 
